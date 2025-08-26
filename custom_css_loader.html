@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom CSS Loader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0f0c29;
+            background: linear-gradient(to right, #302b63, #0f0c29);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .loader-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loader-label {
+            color: #fff;
+            margin-top: 20px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(100, 149, 237, 0.8);
+            animation: pulse 2s infinite;
+        }
+        
+        .quantum-loader {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+        
+        /* Central core element */
+        .core {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: rgba(100, 149, 237, 0.8);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 20px cornflowerblue,
+                0 0 40px cornflowerblue,
+                0 0 60px cornflowerblue;
+            animation: core-pulse 3s infinite ease-in-out;
+        }
+        
+        /* Orbiting particles */
+        .orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: rotate 4s infinite linear;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4e7d;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 
+                0 0 10px #ff4e7d,
+                0 0 20px #ff4e7d;
+            animation: 
+                particle-color 4s infinite,
+                particle-pulse 2s infinite alternate;
+        }
+        
+        .particle:nth-child(2) {
+            animation-delay: -1s;
+            background: #00c9ff;
+            box-shadow: 
+                0 0 10px #00c9ff,
+                0 0 20px #00c9ff;
+        }
+        
+        .particle:nth-child(3) {
+            animation-delay: -2s;
+            background: #7bff79;
+            box-shadow: 
+                0 0 10px #7bff79,
+                0 0 20px #7bff79;
+        }
+        
+        .particle:nth-child(4) {
+            animation-delay: -3s;
+            background: #f9f871;
+            box-shadow: 
+                0 0 10px #f9f871,
+                0 0 20px #f9f871;
+        }
+        
+        /* Quantum wave effect */
+        .wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            animation: wave 3s infinite;
+        }
+        
+        .wave:nth-child(2) {
+            animation-delay: 1s;
+        }
+        
+        .wave:nth-child(3) {
+            animation-delay: 2s;
+        }
+        
+        /* Keyframe animations */
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes core-pulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                background: rgba(100, 149, 237, 0.8);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2);
+                background: rgba(135, 206, 250, 0.9);
+            }
+        }
+        
+        @keyframes particle-color {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        
+        @keyframes particle-pulse {
+            0% { transform: translateX(-50%) scale(0.8); }
+            100% { transform: translateX(-50%) scale(1.2); }
+        }
+        
+        @keyframes wave {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+                border-color: rgba(100, 149, 237, 0.8);
+            }
+            100% {
+                width: 150%;
+                height: 150%;
+                opacity: 0;
+                border-color: rgba(100, 149, 237, 0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="quantum-loader">
+            <div class="core"></div>
+            <div class="orbit">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+        </div>
+        <div class="loader-label">CUSTOM CSS LOADER</div>
+    </div>
+</body>
+</html>
