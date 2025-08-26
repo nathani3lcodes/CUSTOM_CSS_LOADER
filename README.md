@@ -21,7 +21,8 @@ A visually stunning, quantum-inspired CSS loader animation for web projects. Thi
 - `custom_css_loader.html`: Main HTML file containing the loader and embedded CSS.
 
 ## Demo
-![Quantum CSS Loader Demo](screenshot.png)
+<img width="1907" height="931" alt="image" src="https://github.com/user-attachments/assets/934b013b-854e-4090-afb3-eaebc3b35692" />
+
 
 ## License
 This project is open source and free to use for personal and commercial projects.
