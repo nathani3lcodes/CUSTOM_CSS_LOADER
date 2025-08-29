@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Particle Sphere</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+        }
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        .ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 320px;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .ui.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .toggle-ui-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 20;
+            background: #222;
+            color: #ff4a8d;
+            border: none;
+            border-radius: 50%;
+            padding: 7px 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: background 0.2s, opacity 0.3s, visibility 0.3s;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .toggle-ui-btn.floating {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 30;
+            opacity: 1;
+            visibility: visible;
+        }
+        .toggle-ui-btn.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        select#colorPreset {
+            background: #222;
+            color: #ff4a8d;
+            border: 1px solid #ff4a8d;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: 0 1px 4px rgba(255,74,141,0.15);
+            transition: border 0.2s;
+        }
+        select#colorPreset:focus {
+            border: 1.5px solid #fff;
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            color: #ff4a8d;
+            text-shadow: 0 0 10px rgba(255, 74, 141, 0.5);
+        }
+        p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        input[type="range"] {
+            width: 60%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="ui" id="settingsUI">
+            <button class="toggle-ui-btn" id="toggleUI" title="Hide/Show Settings">✕</button>
+            <h1>Cosmic Particle Sphere</h1>
+            <p>Interactive 3D particle system with dynamic colors and rotation. Drag to rotate, scroll to zoom.</p>
+            <div class="controls">
+                <label>
+                    Rotation Speed:
+                    <input type="range" id="rotationSpeed" min="0" max="2" step="0.1" value="0.5">
+                </label>
+                <label>
+                    Color Shift Speed:
+                    <input type="range" id="colorSpeed" min="0" max="2" step="0.1" value="1">
+                </label>
+                <label>
+                    Pulse Intensity:
+                    <input type="range" id="pulseIntensity" min="0" max="2" step="0.1" value="1">
+                </label>
+                <label>
+                    Particle Size:
+                    <input type="range" id="particleSize" min="1" max="10" step="0.1" value="3">
+                </label>
+                <label>
+                    Sphere Radius:
+                    <input type="range" id="sphereRadius" min="50" max="400" step="1" value="200">
+                </label>
+                <label>
+                    Color Preset:
+                    <select id="colorPreset">
+                        <option value="rainbow">Rainbow</option>
+                        <option value="galaxy">Galaxy</option>
+                        <option value="fire">Fire</option>
+                        <option value="ice">Ice</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // UI show/hide logic
+        const uiPanel = document.getElementById('settingsUI');
+        const toggleBtn = document.getElementById('toggleUI');
+        let uiVisible = true;
+        toggleBtn.addEventListener('click', function() {
+            uiVisible = !uiVisible;
+            if (uiVisible) {
+                uiPanel.classList.remove('hide');
+                toggleBtn.classList.remove('floating');
+                toggleBtn.textContent = '✕';
+                toggleBtn.title = 'Hide Settings';
+            } else {
+                uiPanel.classList.add('hide');
+                toggleBtn.classList.add('floating');
+                toggleBtn.textContent = '☰';
+                toggleBtn.title = 'Show Settings';
+            }
+        });
+        // Main Three.js variables
+    let scene, camera, renderer, particleSystem;
+        let particles, positions, colors;
+        let mouseX = 0, mouseY = 0;
+        let windowHalfX = window.innerWidth / 2;
+        let windowHalfY = window.innerHeight / 2;
+
+        // Animation parameters
+        const params = {
+            rotationSpeed: 0.5,
+            colorShiftSpeed: 1,
+            pulseIntensity: 1,
+            sphereRadius: 200,
+            particleCount: 8000,
+            baseHue: 0,
+            particleSize: 3,
+            colorPreset: 'rainbow'
+        };
+
+        // Initialize the scene
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.z = 500;
+
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.querySelector('.container').appendChild(renderer.domElement);
+
+            // ...existing code...
+
+            // Create particle system
+            createParticleSystem();
+
+            // Add event listeners
+            document.addEventListener('mousemove', onDocumentMouseMove, false);
+            document.addEventListener('wheel', onDocumentMouseWheel, false);
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Connect UI controls
+            document.getElementById('rotationSpeed').addEventListener('input', function(e) {
+                params.rotationSpeed = parseFloat(e.target.value);
+            });
+            document.getElementById('colorSpeed').addEventListener('input', function(e) {
+                params.colorShiftSpeed = parseFloat(e.target.value);
+            });
+            document.getElementById('pulseIntensity').addEventListener('input', function(e) {
+                params.pulseIntensity = parseFloat(e.target.value);
+            });
+            document.getElementById('particleSize').addEventListener('input', function(e) {
+                params.particleSize = parseFloat(e.target.value);
+                updateParticleSize();
+            });
+            document.getElementById('sphereRadius').addEventListener('input', function(e) {
+                params.sphereRadius = parseFloat(e.target.value);
+                recreateParticleSystem();
+            });
+            document.getElementById('colorPreset').addEventListener('change', function(e) {
+                params.colorPreset = e.target.value;
+                updateParticleColors();
+            });
+
+            // Start animation
+            animate();
+        }
+
+        // Create the particle system
+        function createParticleSystem() {
+            const geometry = new THREE.BufferGeometry();
+            positions = new Float32Array(params.particleCount * 3);
+            colors = new Float32Array(params.particleCount * 3);
+
+            // Create particles in a spherical formation
+            for (let i = 0; i < params.particleCount; i++) {
+                const i3 = i * 3;
+                // Spherical distribution
+                const radius = params.sphereRadius;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i3 + 2] = radius * Math.cos(phi);
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            // Create particle material
+            const material = new THREE.PointsMaterial({
+                size: params.particleSize,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true
+            });
+
+            // Create particle system
+            particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+            updateParticleColors();
+        }
+
+        // Update particle size
+        function updateParticleSize() {
+            if (particleSystem && particleSystem.material) {
+                particleSystem.material.size = params.particleSize;
+            }
+        }
+
+        // Recreate particle system when sphere radius changes
+        function recreateParticleSystem() {
+            if (particleSystem) {
+                scene.remove(particleSystem);
+            }
+            createParticleSystem();
+        }
+
+        // Update particle colors based on preset
+        function updateParticleColors() {
+            if (!particleSystem) return;
+            const geometry = particleSystem.geometry;
+            const colorAttribute = geometry.getAttribute('color');
+            const color = new THREE.Color();
+            for (let i = 0; i < params.particleCount; i++) {
+                const i3 = i * 3;
+                let hue, sat, light;
+                switch (params.colorPreset) {
+                    case 'rainbow':
+                        hue = (i / params.particleCount) * 0.8 + 0.2;
+                        sat = 0.9;
+                        light = 0.6;
+                        break;
+                    case 'galaxy':
+                        hue = 0.7 + Math.sin(i * 0.01) * 0.2;
+                        sat = 0.8;
+                        light = 0.5 + Math.cos(i * 0.02) * 0.2;
+                        break;
+                    case 'fire':
+                        hue = 0.05 + (i / params.particleCount) * 0.1;
+                        sat = 1.0;
+                        light = 0.5 + Math.random() * 0.2;
+                        break;
+                    case 'ice':
+                        hue = 0.55 + (i / params.particleCount) * 0.1;
+                        sat = 0.7;
+                        light = 0.8;
+                        break;
+                    default:
+                        hue = (i / params.particleCount) * 0.8 + 0.2;
+                        sat = 0.9;
+                        light = 0.6;
+                }
+                color.setHSL(hue % 1, sat, light);
+                colorAttribute.array[i3] = color.r;
+                colorAttribute.array[i3 + 1] = color.g;
+                colorAttribute.array[i3 + 2] = color.b;
+            }
+            colorAttribute.needsUpdate = true;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            render();
+        }
+
+        // Render the scene
+        function render() {
+            // Update particle colors for shifting effect
+            const time = Date.now() * 0.001;
+            params.baseHue += 0.001 * params.colorShiftSpeed;
+            if (params.baseHue > 1) params.baseHue -= 1;
+
+            // Animate colors for rainbow preset only
+            if (params.colorPreset === 'rainbow') {
+                const geometry = particleSystem.geometry;
+                const colorAttribute = geometry.getAttribute('color');
+                const color = new THREE.Color();
+                for (let i = 0; i < params.particleCount; i++) {
+                    const i3 = i * 3;
+                    // Calculate new hue with slight variation per particle
+                    const hue = (params.baseHue + (i / params.particleCount) * 0.5) % 1;
+                    // Add pulsing effect to saturation and lightness
+                    const pulse = Math.sin(time * 2 + i * 0.05) * 0.1 * params.pulseIntensity;
+                    const saturation = 0.8 + pulse;
+                    const lightness = 0.5 + pulse * 0.5;
+                    color.setHSL(hue, saturation, lightness);
+                    colorAttribute.array[i3] = color.r;
+                    colorAttribute.array[i3 + 1] = color.g;
+                    colorAttribute.array[i3 + 2] = color.b;
+                }
+                colorAttribute.needsUpdate = true;
+            }
+
+            // Rotate the sphere
+            particleSystem.rotation.x += 0.001 * params.rotationSpeed;
+            particleSystem.rotation.y += 0.002 * params.rotationSpeed;
+            particleSystem.rotation.z += 0.0005 * params.rotationSpeed;
+
+            // Add subtle camera movement based on mouse position
+            camera.position.x += (mouseX - camera.position.x) * 0.01;
+            camera.position.y += (-mouseY - camera.position.y) * 0.01;
+            camera.lookAt(scene.position);
+
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+
+        // Handle mouse movement for interactive rotation
+        function onDocumentMouseMove(event) {
+            mouseX = (event.clientX - windowHalfX) * 2;
+            mouseY = (event.clientY - windowHalfY) * 2;
+        }
+
+        // Handle mouse wheel for zooming
+        function onDocumentMouseWheel(event) {
+            camera.position.z += event.deltaY * 0.1;
+            // Limit zoom range
+            camera.position.z = Math.max(300, Math.min(800, camera.position.z));
+        }
+
+        // Handle window resize
+        function onWindowResize() {
+            windowHalfX = window.innerWidth / 2;
+            windowHalfY = window.innerHeight / 2;
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // ...existing code...
+        }
+
+        // Start everything
+        init();
+    </script>
+</body>
+</html>
